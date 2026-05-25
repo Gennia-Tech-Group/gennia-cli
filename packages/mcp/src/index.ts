@@ -1,47 +1,79 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { ListToolsRequestSchema, CallToolRequestSchema } from "@modelcontextprotocol/sdk/types.js";
-import { createGenniaClient, DEFAULT_BASE_URL, type GenniaClient } from "@gennia/sdk";
+import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
+import { loadConfig, VERSION } from "./config.js";
+import { listOperations, loadSpec, type ResolvedOperation } from "./openapi.js";
+import { buildInputSchema } from "./schema.js";
+import { executeOperation } from "./execute.js";
 
-export interface GenniaMcpConfig {
-  apiKey: string;
-  baseUrl: string;
+export { loadConfig } from "./config.js";
+
+function describe(op: ResolvedOperation): string {
+  const parts = [op.summary, op.description].filter((part): part is string => Boolean(part));
+  if (parts.length === 0) return `${op.method.toUpperCase()} ${op.path}`;
+  return parts.join("\n\n");
 }
 
-export function loadConfig(env: NodeJS.ProcessEnv = process.env): GenniaMcpConfig {
-  const apiKey = env.GENNIA_API_KEY ?? "";
-  if (!apiKey) {
-    throw new Error(
-      "GENNIA_API_KEY is required. Set it in the MCP server's `env` block or your shell.",
-    );
+function formatBody(body: unknown): string {
+  if (body === null || body === undefined) return "";
+  if (typeof body === "string") return body;
+  try {
+    return JSON.stringify(body, null, 2);
+  } catch {
+    return String(body);
   }
-  return {
-    apiKey,
-    baseUrl: env.GENNIA_BASE_URL ?? DEFAULT_BASE_URL,
-  };
 }
 
 export async function runServer(): Promise<void> {
   const config = loadConfig();
-
-  const client: GenniaClient = createGenniaClient({
-    apiKey: config.apiKey,
-    baseUrl: config.baseUrl,
-    userAgent: `gennia-mcp/0.0.0 (+${config.baseUrl})`,
-  });
+  const spec = loadSpec();
+  const operations = listOperations(spec);
+  const byName = new Map(operations.map((op) => [op.toolName, op]));
 
   const server = new Server(
-    { name: "gennia-mcp", version: "0.0.0" },
+    { name: "gennia-mcp", version: VERSION },
     { capabilities: { tools: {} } },
   );
 
-  // TODO: register one MCP tool per OpenAPI operation. The next iteration will
-  // walk `@gennia/sdk/openapi` and emit `<tag>__<operationId>` tools.
-  server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: [] }));
+  server.setRequestHandler(ListToolsRequestSchema, async () => ({
+    tools: operations.map((op) => ({
+      name: op.toolName,
+      description: describe(op),
+      inputSchema: buildInputSchema(op.operation, spec),
+    })),
+  }));
 
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
-    void client; // referenced once tools are wired
-    throw new Error(`Unknown tool: ${request.params.name}`);
+    const op = byName.get(request.params.name);
+    if (!op) {
+      return {
+        isError: true,
+        content: [{ type: "text" as const, text: `Unknown tool: ${request.params.name}` }],
+      };
+    }
+    const args = (request.params.arguments ?? {}) as Record<string, unknown>;
+    try {
+      const result = await executeOperation(op, args, config);
+      const text = formatBody(result.body);
+      if (!result.ok) {
+        return {
+          isError: true,
+          content: [
+            {
+              type: "text" as const,
+              text: `HTTP ${result.status} from ${op.method.toUpperCase()} ${op.path}\n\n${text}`,
+            },
+          ],
+        };
+      }
+      return { content: [{ type: "text" as const, text: text || "(no content)" }] };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return {
+        isError: true,
+        content: [{ type: "text" as const, text: `Tool execution failed: ${message}` }],
+      };
+    }
   });
 
   const transport = new StdioServerTransport();

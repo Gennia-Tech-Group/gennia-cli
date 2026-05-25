@@ -31,6 +31,7 @@
     "typecheck": "tsc -b",
     "clean": "tsc -b --clean",
     "dev": "tsx src/cli.ts",
+    "smoke": "node scripts/smoke.mjs",
     "test": "echo \"(no tests yet)\" && exit 0"
   },
   "dependencies": {
