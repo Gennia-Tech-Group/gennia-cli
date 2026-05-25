@@ -1,0 +1,43 @@
+{
+  "name": "@gennia/mcp",
+  "version": "0.0.0",
+  "description": "Model Context Protocol server for the Gennia Public API. Exposes every endpoint as an MCP tool.",
+  "license": "MIT",
+  "homepage": "https://github.com/Gennia-Tech-Group/gennia-cli/tree/main/packages/mcp",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Gennia-Tech-Group/gennia-cli.git",
+    "directory": "packages/mcp"
+  },
+  "bugs": {
+    "url": "https://github.com/Gennia-Tech-Group/gennia-cli/issues"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "gennia-mcp": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "dev": "tsx src/cli.ts",
+    "test": "echo \"(no tests yet)\" && exit 0"
+  },
+  "dependencies": {
+    "@gennia/sdk": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.0.4"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  }
+}

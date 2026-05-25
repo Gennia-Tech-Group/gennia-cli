@@ -1,0 +1,30 @@
+{
+  "name": "gennia-cli",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Gennia developer tooling: TypeScript SDK, MCP server, and CLI for the Gennia Public API.",
+  "license": "MIT",
+  "homepage": "https://github.com/Gennia-Tech-Group/gennia-cli",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Gennia-Tech-Group/gennia-cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Gennia-Tech-Group/gennia-cli/issues"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@9.12.0",
+  "scripts": {
+    "build": "pnpm -r --filter=./packages/* run build",
+    "typecheck": "pnpm -r --filter=./packages/* run typecheck",
+    "test": "pnpm -r --filter=./packages/* run test",
+    "sync:openapi": "tsx scripts/sync-openapi.ts",
+    "sdk:generate": "pnpm --filter @gennia/sdk run generate"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  }
+}
