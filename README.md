@@ -4,11 +4,11 @@ Developer tooling for the [Gennia](https://gennia.ai) Public API.
 
 This monorepo ships three packages:
 
-| Package | What it is | Status |
+| Package | What it is | Latest |
 |---|---|---|
-| [`@gennia/sdk`](packages/sdk) | Typed TypeScript client generated from the public OpenAPI spec | scaffold |
-| [`@gennia/mcp`](packages/mcp) | Model Context Protocol server exposing every public-API endpoint as a tool | scaffold |
-| [`@gennia/cli`](packages/cli) | The `gennia` command (auth, agents, runs, `gennia mcp install`) | scaffold |
+| [`@gennia/sdk`](packages/sdk) | Typed TypeScript client generated from the public OpenAPI spec | [`0.2.0`](https://www.npmjs.com/package/@gennia/sdk) |
+| [`@gennia/mcp`](packages/mcp) | Model Context Protocol server exposing 132 public-API endpoints as tools | [`0.2.0`](https://www.npmjs.com/package/@gennia/mcp) |
+| [`@gennia/cli`](packages/cli) | The `gennia` command — auth, `mcp install`, and raw API escape hatch | [`0.2.0`](https://www.npmjs.com/package/@gennia/cli) |
 
 ## Why
 
@@ -20,7 +20,7 @@ three things developers actually want:
 2. An MCP server they can drop into Cursor, Claude Code, Claude Desktop or Codex.
 3. A CLI that automates the boring parts (auth, MCP install, scripted runs).
 
-## Quickstart (once published)
+## Quickstart
 
 ```bash
 # CLI
