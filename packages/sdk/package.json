@@ -33,8 +33,10 @@
   },
   "scripts": {
     "generate": "openapi-typescript ./openapi.json -o ./src/openapi-types.ts",
-    "build": "pnpm run generate && tsc -p tsconfig.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "postinstall": "pnpm run generate",
+    "build": "tsc -b",
+    "typecheck": "tsc -b",
+    "clean": "tsc -b --clean",
     "test": "echo \"(no tests yet)\" && exit 0"
   },
   "dependencies": {

@@ -27,8 +27,9 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "build": "tsc -b",
+    "typecheck": "tsc -b",
+    "clean": "tsc -b --clean",
     "dev": "tsx src/cli.ts",
     "test": "echo \"(no tests yet)\" && exit 0"
   },
