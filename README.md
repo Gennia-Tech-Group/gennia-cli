@@ -61,7 +61,7 @@ gennia-cli/
 
 ## Branching
 
-GitFlow. Feature branches target `develop`; `main` tracks the latest published release.
+Trunk-based. Feature branches target `main`; releases are git tags (`v0.1.0`, ...).
 
 ## License
 

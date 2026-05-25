@@ -1,0 +1,49 @@
+{
+  "name": "@gennia/sdk",
+  "version": "0.0.0",
+  "description": "Typed TypeScript SDK for the Gennia Public API.",
+  "license": "MIT",
+  "homepage": "https://github.com/Gennia-Tech-Group/gennia-cli/tree/main/packages/sdk",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Gennia-Tech-Group/gennia-cli.git",
+    "directory": "packages/sdk"
+  },
+  "bugs": {
+    "url": "https://github.com/Gennia-Tech-Group/gennia-cli/issues"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./openapi": "./openapi.json"
+  },
+  "files": [
+    "dist",
+    "openapi.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "generate": "openapi-typescript ./openapi.json -o ./src/openapi-types.ts",
+    "postinstall": "pnpm run generate",
+    "build": "tsc -b",
+    "typecheck": "tsc -b",
+    "clean": "tsc -b --clean",
+    "test": "echo \"(no tests yet)\" && exit 0"
+  },
+  "dependencies": {
+    "openapi-fetch": "^0.13.0"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.4.0",
+    "typescript": "^5.6.3"
+  }
+}

@@ -12,3 +12,6 @@ coverage/
 *.tsbuildinfo
 .vscode/
 .idea/
+
+# Generated from packages/sdk/openapi.json via `pnpm sdk:generate`. Re-run on install.
+packages/sdk/src/openapi-types.ts

@@ -1,0 +1,45 @@
+{
+  "name": "@gennia/cli",
+  "version": "0.0.0",
+  "description": "The `gennia` command. Auth, agents, runs, and one-shot MCP install for Cursor/Claude Code/Claude Desktop/Codex.",
+  "license": "MIT",
+  "homepage": "https://github.com/Gennia-Tech-Group/gennia-cli/tree/main/packages/cli",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Gennia-Tech-Group/gennia-cli.git",
+    "directory": "packages/cli"
+  },
+  "bugs": {
+    "url": "https://github.com/Gennia-Tech-Group/gennia-cli/issues"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "gennia": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b",
+    "clean": "tsc -b --clean",
+    "dev": "tsx src/cli.ts",
+    "test": "echo \"(no tests yet)\" && exit 0"
+  },
+  "dependencies": {
+    "@gennia/sdk": "workspace:*",
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.16.10",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  }
+}
