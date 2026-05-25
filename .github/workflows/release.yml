@@ -1,0 +1,51 @@
+name: Release
+
+# Publishes every non-private workspace package to npm whenever a `v*` tag is
+# pushed. Also exposes a manual `workflow_dispatch` button on GitHub for safety
+# (e.g. re-running a failed publish without retagging).
+#
+# Required secret: NPM_TOKEN — granular token with "Bypass 2FA when publishing"
+# enabled and read/write on the @gennia scope.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  # `id-token: write` is required for npm provenance, which signs the package
+  # with a GitHub-attested build origin (shows "Built and signed on GitHub
+  # Actions" on the npm page).
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          registry-url: "https://registry.npmjs.org"
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm build
+
+      - name: Publish workspace packages
+        # `pnpm -r publish` walks every non-private workspace package in
+        # topological order, rewriting `workspace:*` deps to the published
+        # version. `@gennia/cli` is `private: true` for now and gets skipped.
+        # `--no-git-checks` is required because the runner is on a detached
+        # HEAD (the tag commit).
+        run: pnpm -r publish --access public --no-git-checks --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"
