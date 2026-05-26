@@ -2,9 +2,13 @@ import { Command, CommanderError } from "commander";
 import { createOutput } from "./lib/output.js";
 import { ExitCode, GenniaCliError } from "./lib/errors.js";
 import { CLI_VERSION } from "./lib/sdk.js";
+import { renderBanner, shouldUseColor } from "./lib/banner.js";
 import { buildAuthCommand } from "./commands/auth/index.js";
 import { buildMcpCommand } from "./commands/mcp/index.js";
 import { buildApiCommand } from "./commands/api.js";
+import { buildKnowledgeCommand } from "./commands/knowledge/index.js";
+import { buildSkillsCommand } from "./commands/skills/index.js";
+import { buildHubCommand } from "./commands/hub/index.js";
 
 export function buildProgram(): Command {
   const program = new Command();
@@ -19,8 +23,19 @@ export function buildProgram(): Command {
       writeErr: (str) => process.stderr.write(str),
     });
 
+  // The wordmark prints only on top-level `gennia --help` / `gennia` invocations,
+  // not on nested `gennia <sub> --help`. Skipped in pipes (NO_COLOR / non-TTY)
+  // so machine output stays clean.
+  program.addHelpText("beforeAll", () => {
+    if (!shouldUseColor()) return "";
+    return `${renderBanner({ color: true })}\n\n`;
+  });
+
   program.addCommand(buildAuthCommand());
   program.addCommand(buildMcpCommand());
+  program.addCommand(buildKnowledgeCommand());
+  program.addCommand(buildSkillsCommand());
+  program.addCommand(buildHubCommand());
   program.addCommand(buildApiCommand());
 
   program.addHelpText("after", `

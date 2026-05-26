@@ -66,8 +66,8 @@ If `gennia` is not on PATH, suggest `npm install -g @gennia/cli` or `npx -y @gen
 | Hub clients | `/public/api/v1/clients` | `clients__*` (8) |
 | Hub access | `/public/api/v1/hub/access`, `/hub/domain`, `/hub/external-links` | `hub_access__*`, `hub_domain__*`, `hub_external_links__*` |
 | Plans + billing | `/public/api/v1/billing/*` | `billing__*` (15) |
-| Knowledge | `/public/api/v1/knowledge-sources` | `knowledge_sources__*` — **upload requires the web UI (multipart not yet over MCP)** |
-| Skills | `/public/api/v1/skills` | `skills__*` — **upload requires the web UI** |
+| Knowledge | `/public/api/v1/knowledge-sources` | `knowledge_sources__*` (incl. upload via `file_path`) + CLI `gennia knowledge upload` |
+| Skills | `/public/api/v1/skills` | `skills__*` (incl. upload via `file_path`) + CLI `gennia skills upload` |
 | Conversations | `/public/api/v1/conversations` | `conversations__*`, `messages__send_message` |
 | HTTP tools / MCPs / channels (agent-side) | various | `http_tools__*`, `external_mcps__*`, `agent_channels__*` |
 
@@ -111,13 +111,23 @@ gennia api GET /agents --all \
     done
 ```
 
+## File uploads
+
+Three endpoints take multipart bodies. Both the MCP server and the CLI accept a **local file path** instead of the raw bytes:
+
+| Endpoint | MCP tool | CLI |
+|---|---|---|
+| `POST /knowledge-sources` | `mcp__gennia__knowledge_sources__upload_file` with `{ file_path, metadata }` | `gennia knowledge upload <file> --metadata '{...}'` |
+| `POST /skills` | `mcp__gennia__skills__upload_skill` with `{ file_path }` | `gennia skills upload <file>` |
+| `POST /hub/logos/{type}` | `mcp__gennia__hub__upload_logo` with `{ type, file_path }` | `gennia hub upload-logo <file> --type=horizontal\|icon\|email\|banner` |
+
+The MCP server reads the file from the local filesystem of the user's machine (stdio transport runs locally). For a remote MCP this would require a different mechanism, but that's out of scope today.
+
 ## Endpoints with caveats
 
 | Endpoint | Caveat |
 |---|---|
 | `POST /agents/{id}/messages/stream` | Server-Sent Events. Not exposed via MCP. Use the sync `/messages` endpoint, or invoke the URL directly with `curl`. |
-| `POST /knowledge-sources` (multipart) | File upload. Not exposed via MCP. Use the web UI today; a future CLI command will accept `--file`. |
-| `POST /skills` (ZIP upload) | Same as above. |
 | Anything destructive (`DELETE *`, `suspend_client`, `delete_hub_external_links`) | Surface intent to the user; ask for confirmation before calling. |
 
 ## Don't

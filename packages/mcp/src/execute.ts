@@ -1,5 +1,7 @@
+import { uploadFile } from "@gennia/sdk";
 import type { GenniaMcpConfig } from "./config.js";
 import type { ResolvedOperation } from "./openapi.js";
+import { flattenMultipartFields } from "./schema.js";
 
 export interface ExecuteResult {
   ok: boolean;
@@ -24,6 +26,16 @@ function appendQuery(params: URLSearchParams, name: string, value: unknown): voi
 }
 
 export async function executeOperation(
+  op: ResolvedOperation,
+  args: Record<string, unknown>,
+  config: GenniaMcpConfig,
+): Promise<ExecuteResult> {
+  return op.multipart
+    ? executeMultipart(op, args, config)
+    : executeJson(op, args, config);
+}
+
+async function executeJson(
   op: ResolvedOperation,
   args: Record<string, unknown>,
   config: GenniaMcpConfig,
@@ -89,5 +101,64 @@ export async function executeOperation(
     status: response.status,
     body: parsed,
     contentType,
+  };
+}
+
+async function executeMultipart(
+  op: ResolvedOperation,
+  args: Record<string, unknown>,
+  config: GenniaMcpConfig,
+): Promise<ExecuteResult> {
+  const { fields, fileField } = flattenMultipartFields(op.operation);
+  const filePathRaw = args.file_path;
+  if (typeof filePathRaw !== "string" || filePathRaw.length === 0) {
+    throw new Error("Missing required `file_path` (absolute or relative path to the file to upload).");
+  }
+
+  let path = op.path;
+  for (const param of op.operation.parameters ?? []) {
+    if (param.in !== "path") continue;
+    const value = args[param.name];
+    if (value === undefined) {
+      throw new Error(`Missing required path parameter: ${param.name}`);
+    }
+    path = path.replace(`{${param.name}}`, encodeURIComponent(String(value)));
+  }
+
+  const query = new URLSearchParams();
+  for (const param of op.operation.parameters ?? []) {
+    if (param.in === "query") {
+      const value = args[param.name];
+      if (value !== undefined) appendQuery(query, param.name, value);
+    }
+  }
+  const url = new URL(path, config.baseUrl);
+  if (query.toString()) url.search = query.toString();
+
+  // Extra non-file multipart fields (everything from the flattened body except
+  // the `file_path` we already handled).
+  const extra: Record<string, string> = {};
+  for (const field of fields) {
+    if (field.name === "file_path") continue;
+    const value = args[field.name];
+    if (value === undefined) continue;
+    extra[field.name] = typeof value === "string" ? value : JSON.stringify(value);
+  }
+
+  const result = await uploadFile({
+    apiKey: config.apiKey,
+    baseUrl: url.origin,
+    path: `${url.pathname}${url.search}`,
+    filePath: filePathRaw,
+    fileField,
+    fields: extra,
+    userAgent: config.userAgent,
+  });
+
+  return {
+    ok: result.ok,
+    status: result.status,
+    body: result.body,
+    contentType: null,
   };
 }

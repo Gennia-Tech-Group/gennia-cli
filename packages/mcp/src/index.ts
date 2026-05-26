@@ -3,7 +3,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { loadConfig, VERSION } from "./config.js";
 import { listOperations, loadSpec, type ResolvedOperation } from "./openapi.js";
-import { buildInputSchema } from "./schema.js";
+import { buildInputSchemaForOperation } from "./schema.js";
 import { executeOperation } from "./execute.js";
 
 export { loadConfig } from "./config.js";
@@ -39,7 +39,7 @@ export async function runServer(): Promise<void> {
     tools: operations.map((op) => ({
       name: op.toolName,
       description: describe(op),
-      inputSchema: buildInputSchema(op.operation, spec),
+      inputSchema: buildInputSchemaForOperation(op, spec),
     })),
   }));
 

@@ -45,6 +45,8 @@ export interface ResolvedOperation {
   tag: string;
   toolName: string;
   operation: OpenAPIOperation;
+  /** True when the only `requestBody.content` is `multipart/form-data`. */
+  multipart: boolean;
 }
 
 const HTTP_METHODS: HttpMethod[] = ["get", "put", "post", "delete", "options", "head", "patch"];
@@ -61,7 +63,7 @@ function toSnakeCase(input: string): string {
     .toLowerCase();
 }
 
-function isMultipart(op: OpenAPIOperation): boolean {
+export function isMultipart(op: OpenAPIOperation): boolean {
   return Boolean(op.requestBody?.content && "multipart/form-data" in op.requestBody.content);
 }
 
@@ -78,7 +80,6 @@ export function listOperations(spec: OpenAPISpec): ResolvedOperation[] {
       if (!op) continue;
       if (!op.operationId) continue;
       if (isStreaming(path, method)) continue;
-      if (isMultipart(op)) continue;
       const tag = op.tags?.[0] ?? "default";
       const toolName = `${toSnakeCase(tag)}__${toSnakeCase(op.operationId)}`;
       ops.push({
@@ -90,6 +91,7 @@ export function listOperations(spec: OpenAPISpec): ResolvedOperation[] {
         tag,
         toolName,
         operation: op,
+        multipart: isMultipart(op),
       });
     }
   }
