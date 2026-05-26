@@ -1,6 +1,6 @@
 {
   "name": "@gennia/cli",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "The `gennia` command. Auth, agents, runs, and one-shot MCP install for Cursor/Claude Code/Claude Desktop/Codex.",
   "license": "MIT",
   "homepage": "https://github.com/Gennia-Tech-Group/gennia-cli/tree/main/packages/cli",

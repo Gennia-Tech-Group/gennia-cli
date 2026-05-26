@@ -1,4 +1,4 @@
-import type { OpenAPIOperation, OpenAPISpec } from "./openapi.js";
+import type { OpenAPIOperation, OpenAPISpec, ResolvedOperation } from "./openapi.js";
 
 export interface InputSchema {
   type: "object";
@@ -60,7 +60,60 @@ function collectRefs(roots: unknown[], allSchemas: Record<string, unknown>): Rec
   return collected;
 }
 
-export function buildInputSchema(op: OpenAPIOperation, spec: OpenAPISpec): InputSchema {
+function isBinaryFileSchema(value: unknown): boolean {
+  if (!value || typeof value !== "object") return false;
+  const obj = value as Record<string, unknown>;
+  return obj.type === "string" && obj.format === "binary";
+}
+
+interface ParamSpec {
+  name: string;
+  schema: Record<string, unknown>;
+  required: boolean;
+}
+
+function flattenMultipartFields(op: OpenAPIOperation): {
+  fields: ParamSpec[];
+  /** Multipart field name that holds the binary file payload (default `file`). */
+  fileField: string;
+} {
+  const schema = op.requestBody?.content?.["multipart/form-data"]?.schema;
+  const fields: ParamSpec[] = [];
+  let fileField = "file";
+  if (!schema || typeof schema !== "object") return { fields, fileField };
+
+  const requiredList = Array.isArray((schema as Record<string, unknown>).required)
+    ? ((schema as Record<string, unknown>).required as string[])
+    : [];
+  const props = (schema as Record<string, unknown>).properties;
+  if (!props || typeof props !== "object") return { fields, fileField };
+
+  for (const [name, raw] of Object.entries(props as Record<string, unknown>)) {
+    if (isBinaryFileSchema(raw)) {
+      fileField = name;
+      const description = (raw as Record<string, unknown>).description as string | undefined;
+      fields.push({
+        name: "file_path",
+        schema: {
+          type: "string",
+          description:
+            description ?? `Absolute or relative path to the local file to upload (originally multipart field "${name}").`,
+        },
+        required: requiredList.includes(name),
+      });
+      continue;
+    }
+    const cloned = rewriteRefs(raw) as Record<string, unknown>;
+    fields.push({
+      name,
+      schema: cloned,
+      required: requiredList.includes(name),
+    });
+  }
+  return { fields, fileField };
+}
+
+export function buildInputSchema(op: OpenAPIOperation, spec: OpenAPISpec, ctx: { multipart?: boolean } = {}): InputSchema {
   const properties: Record<string, unknown> = {};
   const required: string[] = [];
 
@@ -76,22 +129,46 @@ export function buildInputSchema(op: OpenAPIOperation, spec: OpenAPISpec): Input
     }
   }
 
-  const jsonBody = op.requestBody?.content?.["application/json"]?.schema;
-  if (jsonBody) {
-    const rewritten = rewriteRefs(jsonBody) as Record<string, unknown>;
-    properties.body = op.requestBody?.description
-      ? { ...rewritten, description: op.requestBody.description }
-      : rewritten;
-    if (op.requestBody?.required) {
-      required.push("body");
+  if (ctx.multipart) {
+    const { fields } = flattenMultipartFields(op);
+    for (const field of fields) {
+      properties[field.name] = field.schema;
+      if (field.required) required.push(field.name);
+    }
+  } else {
+    const jsonBody = op.requestBody?.content?.["application/json"]?.schema;
+    if (jsonBody) {
+      const rewritten = rewriteRefs(jsonBody) as Record<string, unknown>;
+      properties.body = op.requestBody?.description
+        ? { ...rewritten, description: op.requestBody.description }
+        : rewritten;
+      if (op.requestBody?.required) {
+        required.push("body");
+      }
     }
   }
 
   const allSchemas = spec.components?.schemas ?? {};
-  const $defs = collectRefs([op.parameters, op.requestBody], allSchemas);
+  const refRoots: unknown[] = [op.parameters];
+  if (ctx.multipart) {
+    refRoots.push(op.requestBody?.content?.["multipart/form-data"]?.schema);
+  } else {
+    refRoots.push(op.requestBody);
+  }
+  const $defs = collectRefs(refRoots, allSchemas);
 
   const result: InputSchema = { type: "object", properties };
   if (required.length > 0) result.required = required;
   if (Object.keys($defs).length > 0) result.$defs = $defs;
   return result;
 }
+
+/**
+ * Convenience wrapper used by `index.ts` so call sites don't have to pass the
+ * multipart flag twice.
+ */
+export function buildInputSchemaForOperation(op: ResolvedOperation, spec: OpenAPISpec): InputSchema {
+  return buildInputSchema(op.operation, spec, { multipart: op.multipart });
+}
+
+export { flattenMultipartFields };

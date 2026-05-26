@@ -5,6 +5,9 @@ import { CLI_VERSION } from "./lib/sdk.js";
 import { buildAuthCommand } from "./commands/auth/index.js";
 import { buildMcpCommand } from "./commands/mcp/index.js";
 import { buildApiCommand } from "./commands/api.js";
+import { buildKnowledgeCommand } from "./commands/knowledge/index.js";
+import { buildSkillsCommand } from "./commands/skills/index.js";
+import { buildHubCommand } from "./commands/hub/index.js";
 
 export function buildProgram(): Command {
   const program = new Command();
@@ -21,6 +24,9 @@ export function buildProgram(): Command {
 
   program.addCommand(buildAuthCommand());
   program.addCommand(buildMcpCommand());
+  program.addCommand(buildKnowledgeCommand());
+  program.addCommand(buildSkillsCommand());
+  program.addCommand(buildHubCommand());
   program.addCommand(buildApiCommand());
 
   program.addHelpText("after", `

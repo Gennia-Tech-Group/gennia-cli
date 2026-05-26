@@ -50,3 +50,6 @@ export function createGenniaClient(options: GenniaClientOptions = {}): GenniaCli
 }
 
 export type { paths, components, operations } from "./openapi-types.js";
+
+export { uploadFile } from "./upload.js";
+export type { UploadFileParams, UploadFileResult } from "./upload.js";
