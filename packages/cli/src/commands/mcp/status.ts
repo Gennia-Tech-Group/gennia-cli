@@ -2,7 +2,6 @@ import { Command } from "commander";
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import pc from "picocolors";
-import { DEFAULT_BASE_URL } from "@gennia/sdk";
 import { createOutput } from "../../lib/output.js";
 import { resolveAuth } from "../../lib/auth.js";
 import { healthCheck } from "../auth/shared.js";
@@ -25,7 +24,9 @@ export function buildStatusCommand(): Command {
     .description("Diagnose problems with the Gennia MCP setup on this machine.")
     .option("--name <name>", "Server name to look for", DEFAULT_SERVER_NAME)
     .option("--api-key <key>", "Override the API key for the health probe")
-    .option("--base-url <url>", "Override the API base URL", DEFAULT_BASE_URL)
+    // No default — let resolveAuth() walk flag → env → saved config. Setting a
+    // default here would force prod's URL even when the user logged into dev.
+    .option("--base-url <url>", "Override the API base URL")
     .option("--json", "Emit structured JSON output to stdout")
     .option("--quiet", "Suppress all human-readable output")
     .addHelpText("after", `

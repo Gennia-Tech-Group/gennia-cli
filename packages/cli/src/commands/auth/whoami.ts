@@ -2,6 +2,7 @@ import { Command } from "commander";
 import pc from "picocolors";
 import { createOutput } from "../../lib/output.js";
 import { resolveAuth } from "../../lib/auth.js";
+import { genniaBlue } from "../../lib/banner.js";
 import { healthCheck } from "./shared.js";
 
 export function buildWhoamiCommand(): Command {
@@ -36,9 +37,12 @@ Examples:
           credentialSource: auth.source,
         },
         () => {
+          // "API key ID" not "API key" — this is the public identifier of the
+          // key (UUID), not the secret `gsk_...`. The secret never leaves
+          // ~/.config/gennia/config.json (mode 0600).
           const lines = [
-            `Workspace:        ${pc.cyan(identity.workspacePublicId)}`,
-            `API key:          ${pc.dim(identity.apiKeyPublicId)}`,
+            `Workspace:        ${genniaBlue(identity.workspacePublicId)}`,
+            `API key ID:       ${pc.dim(identity.apiKeyPublicId)}`,
             `Base URL:         ${pc.dim(auth.baseUrl)}`,
             `Credential from:  ${pc.dim(auth.source)}`,
           ];

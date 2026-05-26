@@ -1,6 +1,6 @@
 {
   "name": "@gennia/sdk",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Typed TypeScript SDK for the Gennia Public API.",
   "license": "MIT",
   "homepage": "https://github.com/Gennia-Tech-Group/gennia-cli/tree/main/packages/sdk",

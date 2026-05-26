@@ -6,7 +6,7 @@ export interface GenniaMcpConfig {
   userAgent: string;
 }
 
-export const VERSION = "0.3.0";
+export const VERSION = "0.3.1";
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): GenniaMcpConfig {
   const apiKey = env.GENNIA_API_KEY ?? "";
