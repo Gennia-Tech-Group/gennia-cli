@@ -19,13 +19,25 @@ const GENNIA_LINES = [
 
 const TAGLINE = "Build agents · ship Hubs · automate workspaces";
 
+// Brand color (#347BFA) emitted via ANSI 24-bit truecolor — all modern
+// terminals (iTerm2, Terminal.app, VS Code, Alacritty, kitty, wezterm) honor
+// it. Old terminals show the raw escapes; the NO_COLOR / non-TTY fallback in
+// shouldUseColor() avoids that case entirely.
+const GENNIA_BLUE_FG = "\x1b[38;2;52;123;250m";
+const RESET_FG = "\x1b[39m";
+
+/** Paint a string in the official Gennia brand blue (#347BFA). */
+export function genniaBlue(text: string): string {
+  return `${GENNIA_BLUE_FG}${text}${RESET_FG}`;
+}
+
 export interface BannerOptions {
   color?: boolean;
 }
 
 export function renderBanner(opts: BannerOptions = {}): string {
   const color = opts.color ?? false;
-  const paint = (line: string) => (color ? pc.cyan(line) : line);
+  const paint = (line: string) => (color ? genniaBlue(line) : line);
   const dim = (text: string) => (color ? pc.dim(text) : text);
   const lines = GENNIA_LINES.map(paint);
   lines.push("");
@@ -43,7 +55,7 @@ export interface WelcomeOptions {
 
 export function renderWelcome(opts: WelcomeOptions): string {
   const { color, workspacePublicId, baseUrl, withBanner } = opts;
-  const c = (s: string) => (color ? pc.cyan(s) : s);
+  const c = (s: string) => (color ? genniaBlue(s) : s);
   const d = (s: string) => (color ? pc.dim(s) : s);
   const bold = (s: string) => (color ? pc.bold(s) : s);
 

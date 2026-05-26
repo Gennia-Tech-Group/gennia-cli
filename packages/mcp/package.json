@@ -1,6 +1,6 @@
 {
   "name": "@gennia/mcp",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Model Context Protocol server for the Gennia Public API. Exposes every endpoint as an MCP tool.",
   "license": "MIT",
   "homepage": "https://github.com/Gennia-Tech-Group/gennia-cli/tree/main/packages/mcp",
