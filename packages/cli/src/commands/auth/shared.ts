@@ -33,12 +33,16 @@ export async function healthCheck(params: { apiKey: string; baseUrl: string }): 
   }
 
   if (response.status === 401 || response.status === 403) {
+    const isProd = params.baseUrl.includes("api.gennia.ai") && !params.baseUrl.includes("dev");
+    const envHint = isProd
+      ? "If this key was generated in a non-prod workspace (dev, local), retry with --base-url=https://api.dev.gennia.ai (or your local backend)."
+      : "Double-check that the key belongs to the workspace at this base URL — keys are env-scoped.";
     throw new GenniaCliError({
       code: "invalid_credentials",
-      message: `API key rejected (HTTP ${response.status}).`,
+      message: `API key rejected (HTTP ${response.status}) by ${params.baseUrl}.`,
       exitCode: ExitCode.Unauthorized,
-      hint: "Run `gennia auth login --force` with a fresh key from https://app.gennia.ai/api-keys.",
-      context: { status: response.status },
+      hint: `${envHint} Generate a fresh key in Studio: workspace → Settings → API Keys.`,
+      context: { status: response.status, baseUrl: params.baseUrl },
     });
   }
 

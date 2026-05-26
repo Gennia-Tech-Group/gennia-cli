@@ -15,8 +15,18 @@ export function buildLoginCommand(): Command {
     .option("--json", "Emit structured JSON output to stdout")
     .option("--quiet", "Suppress all human-readable output")
     .addHelpText("after", `
+The CLI talks to the **production** API by default (https://api.gennia.ai).
+If your key was generated in a non-prod workspace (dev, local), pass
+--base-url so the key validates against the right environment:
+
+  $ gennia auth login --base-url=https://api.dev.gennia.ai
+  $ gennia auth login --base-url=http://localhost:8080
+
+Generate a key inside Studio: open your workspace, then Settings → API Keys
+(it's a modal; the value is shown once — copy it before closing).
+
 Examples:
-  # Interactive (paste the key when prompted)
+  # Interactive (paste the key when prompted; the real value is never echoed)
   $ gennia auth login
 
   # Non-interactive (agents, scripts, CI)
@@ -54,7 +64,7 @@ Examples:
           code: "invalid_api_key",
           message: "API key doesn't look like a Gennia workspace key.",
           exitCode: ExitCode.Usage,
-          hint: "Workspace keys start with `gsk_`. Get one at https://app.gennia.ai/api-keys.",
+          hint: "Workspace keys start with `gsk_`. Generate one inside Studio: open your workspace, then Settings → API Keys.",
         });
       }
 
