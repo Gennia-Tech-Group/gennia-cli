@@ -4,6 +4,7 @@ import { createOutput } from "../../lib/output.js";
 import { GenniaCliError, ExitCode } from "../../lib/errors.js";
 import { saveConfig, loadConfig } from "../../lib/config.js";
 import { promptLine } from "../../lib/tty.js";
+import { renderWelcome } from "../../lib/banner.js";
 import { healthCheck } from "./shared.js";
 
 export function buildLoginCommand(): Command {
@@ -78,9 +79,6 @@ Examples:
         apiKeyPublicId: identity.apiKeyPublicId,
       });
 
-      output.success(
-        `Logged in to workspace ${identity.workspacePublicId} (api key ${identity.apiKeyPublicId}).`,
-      );
       output.data(
         {
           status: "logged_in",
@@ -88,7 +86,13 @@ Examples:
           apiKeyPublicId: identity.apiKeyPublicId,
           baseUrl,
         },
-        () => `Saved credentials to ~/.config/gennia/config.json`,
+        () =>
+          renderWelcome({
+            workspacePublicId: identity.workspacePublicId,
+            baseUrl,
+            color: output.opts.color,
+            withBanner: true,
+          }),
       );
     });
 }

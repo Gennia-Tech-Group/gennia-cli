@@ -2,6 +2,7 @@ import { Command, CommanderError } from "commander";
 import { createOutput } from "./lib/output.js";
 import { ExitCode, GenniaCliError } from "./lib/errors.js";
 import { CLI_VERSION } from "./lib/sdk.js";
+import { renderBanner, shouldUseColor } from "./lib/banner.js";
 import { buildAuthCommand } from "./commands/auth/index.js";
 import { buildMcpCommand } from "./commands/mcp/index.js";
 import { buildApiCommand } from "./commands/api.js";
@@ -21,6 +22,14 @@ export function buildProgram(): Command {
       // Send Commander's own errors to stderr; stdout is reserved for data.
       writeErr: (str) => process.stderr.write(str),
     });
+
+  // The wordmark prints only on top-level `gennia --help` / `gennia` invocations,
+  // not on nested `gennia <sub> --help`. Skipped in pipes (NO_COLOR / non-TTY)
+  // so machine output stays clean.
+  program.addHelpText("beforeAll", () => {
+    if (!shouldUseColor()) return "";
+    return `${renderBanner({ color: true })}\n\n`;
+  });
 
   program.addCommand(buildAuthCommand());
   program.addCommand(buildMcpCommand());
