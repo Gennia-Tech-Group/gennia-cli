@@ -1,4 +1,5 @@
 import { createInterface } from "node:readline/promises";
+import password from "@inquirer/password";
 import { GenniaCliError, ExitCode } from "./errors.js";
 
 export function isInteractive(): boolean {
@@ -9,9 +10,10 @@ export function isInteractive(): boolean {
  * Read a single line from stdin in a TTY. Throws GenniaCliError(`no_tty`) when
  * called without a TTY so agents fail fast with a clear hint instead of hanging.
  *
- * `mask: true` enables proper raw-mode masking (each typed/pasted character
- * shows as `*`, the real value is collected silently). Falls back to plain
- * readline when `mask` is unset.
+ * `mask: true` delegates to `@inquirer/password`, which handles raw-mode
+ * masking, bracketed-paste, and Ctrl+V paste consistently across Windows
+ * Terminal/PowerShell, macOS Terminal/iTerm2, and Linux terminals. (Our
+ * previous hand-rolled implementation broke paste on Windows.)
  */
 export async function promptLine(message: string, opts: { mask?: boolean } = {}): Promise<string> {
   if (!isInteractive()) {
@@ -24,7 +26,17 @@ export async function promptLine(message: string, opts: { mask?: boolean } = {})
   }
 
   if (opts.mask) {
-    return readMaskedLine(message);
+    try {
+      const answer = await password({ message, mask: "*" });
+      return answer.trim();
+    } catch (err) {
+      // Inquirer throws ExitPromptError on Ctrl+C; mirror the previous
+      // SIGINT exit code (128 + 2) so callers/scripts see the same signal.
+      if (err instanceof Error && err.name === "ExitPromptError") {
+        process.exit(130);
+      }
+      throw err;
+    }
   }
 
   const rl = createInterface({
@@ -38,80 +50,6 @@ export async function promptLine(message: string, opts: { mask?: boolean } = {})
   } finally {
     rl.close();
   }
-}
-
-/**
- * Read a line from stdin without ever echoing the real characters. Each byte
- * the user types (or pastes) is replaced with `*` on stderr. Backspace deletes
- * the last character; Ctrl-C and Ctrl-D abort.
- */
-function readMaskedLine(message: string): Promise<string> {
-  process.stderr.write(`${message} `);
-
-  const stdin = process.stdin;
-  const wasRaw = stdin.isRaw === true;
-  stdin.setRawMode(true);
-  stdin.resume();
-  stdin.setEncoding("utf8");
-
-  let collected = "";
-
-  return new Promise<string>((resolve) => {
-    const restore = () => {
-      stdin.removeListener("data", onData);
-      if (!wasRaw) stdin.setRawMode(false);
-      stdin.pause();
-    };
-
-    const abort = (signal: number) => {
-      restore();
-      process.stderr.write("\n");
-      process.exit(128 + signal);
-    };
-
-    const onData = (chunk: string) => {
-      for (const ch of chunk) {
-        const code = ch.charCodeAt(0);
-        // Enter (CR or LF) — submit
-        if (code === 13 || code === 10) {
-          restore();
-          process.stderr.write("\n");
-          resolve(collected);
-          return;
-        }
-        // Ctrl+C
-        if (code === 3) {
-          abort(2);
-          return;
-        }
-        // Ctrl+D — EOF; submit whatever we have, or abort if empty
-        if (code === 4) {
-          if (collected.length === 0) {
-            abort(15);
-            return;
-          }
-          restore();
-          process.stderr.write("\n");
-          resolve(collected);
-          return;
-        }
-        // Backspace or Delete
-        if (code === 127 || code === 8) {
-          if (collected.length > 0) {
-            collected = collected.slice(0, -1);
-            process.stderr.write("\b \b");
-          }
-          continue;
-        }
-        // Other control chars
-        if (code < 32) continue;
-        collected += ch;
-        process.stderr.write("*");
-      }
-    };
-
-    stdin.on("data", onData);
-  });
 }
 
 /**
